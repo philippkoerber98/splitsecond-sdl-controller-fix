@@ -1,0 +1,130 @@
+Split/Second Controller Fix 1.4 - Test Report
+Tests run on 2026-11-20; package completed on 2026-11-21
+
+Result
+LT and RT are queried as separate analog inputs for the verified PC game version.
+Even simultaneous full or equal trigger values no longer cancel each other.
+No drift logic or vehicle physics was added or changed.
+
+Binary version
+Original executable SHA-256 (unchanged):
+D11FC7F48DD504BDEFB16B548980BD41101F6C1A23D29C03487A81D4DE42173E
+sspad.dll = dinput8.dll SHA256:
+904BD427B31F99685156DF0388DBB5FBA7E4F5BD519E7DF4B17735797909FCE1
+SDL 3.4.20 x86
+
+Analyzed game input path
+0x40E99F reads DIJOYSTATE2 directly into the current game buffer.
+Device entry: device pointer +0x244, input buffers +0x294/+0x3A4,
+validity flags +0x558/+0x559. Axis routine 0x40DCE0 previously queried
+the positive/negative halves of the same Z value for codes 4/5.
+0x40E200/0x40E220 select the previous/current buffer. Original
+action queries (including 0x40F0F0) read the axis code from the selected
+binding and call this routine. The fix does not hard-code gas/brake
+actions or simulate them with a new drift rule.
+
+Implementation
+sspad.cpp reads LT/RT separately with SDL_GetGamepadAxis and normalizes by /32767.
+For each SDL device and each of the two game buffers, GetDeviceState records
+the input pair for that polling cycle. For the verified executable, triggers.cpp
+replaces only axis queries for codes 4/5 from our SDL devices with the
+corresponding stored LT/RT sample.
+Both values are therefore available simultaneously to the original action
+mapping. The original dead-zone routine 0x410820 and acquisition gate
+remain active. Other axes, digital buttons, and other devices use the original
+axis routine. The fix does not query SDL again during an action query, so
+current and previous frames remain consistent.
+Disconnect neutralizes both stored frames. Unacquire sets them to zero;
+Release removes the associated samples. Two samples are kept per device.
+
+The combined DirectInput Z axis remains for the existing device layout
+and legacy bindings. It is not the new gameplay trigger path.
+LT/RT names and axis codes for existing remapping remain unchanged.
+No Steam settings are involved, and the original executable on disk is not changed.
+
+Integration test using original machine code
+independent-triggers-test.cpp and trigger-test-launcher.cpp execute the
+original PC game routines from the local executable in a separate process.
+The executable is not distributed. The launcher reserves the original
+address range before Windows/CRT allocations. The test replaces its dummy
+image with the original image and exits without its normal process teardown.
+The game itself is not launched by this integration test.
+
+Tests use two SDL virtual gamepads, the production adapter,
+two current/previous game buffers, and two original action-binding tables.
+Results (process exit code 0; full output is in the adjacent result file):
+- 101 x 101 LT/RT levels = 10,201 simultaneous combinations per controller,
+  with independent complementary values on the second controller.
+- Compared at both the patched original axis entry 0x40DCE0 and
+  after the original action lookup 0x40F0F0; maximum tolerance 0.0001.
+- Both endpoints, equal values, unequal values, and 100% / 100% passed.
+- Previous and current samples remain distinct after values change.
+- Swapped gas/brake bindings follow the new trigger assignment.
+- Gas bound to LB instead of a trigger: the original digital action query returns 1.
+- Both controllers passed simultaneous tests with separate rumble motor values.
+- Disconnect also neutralizes the previous frame; the other controller remains
+  correct; reconnect restores independent values.
+- Invalid game buffer/Unacquire return zero.
+
+Running game
+A test copy of the executable was started with a separate instrumented SDL test DLL;
+it used production code, two virtual devices, and logging.
+The menu was controlled with a gamepad, switching between Xbox and keyboard prompts.
+A City Center split-screen race was loaded and both cars were driven.
+The test initially had two launch failures caused by an incorrectly populated
+import name in the test copy. That copy was corrected. The original executable
+was unaffected. The game resumed correctly after focus changes and pausing.
+
+The logged original axis query returned these simultaneous values:
+Controller 1: LT 0.24997711 / RT 0.74999237
+Controller 2: LT 0.74999237 / RT 0.24997711
+Both: LT 0.49998474 / RT 0.49998474, and LT 1.0 / RT 1.0.
+Small partial-value differences are caused by quantized
+SDL test values; full triggers return exactly 1.0. Neither trigger subtracts from the other.
+Both current and previous game buffers were logged.
+One controller was virtually disconnected and reconnected during the race;
+there was no crash, and separate values worked again. See the adjacent CSV.
+The live game measurement covers the axis query; numeric verification of the
+complete action lookup is additionally covered by the integration test.
+No quantitative drift/vehicle physics experiment was conducted.
+
+Regression
+The separate adapter test passed with the production DLL:
+- Enumeration and two independent SDL devices
+- 101 analog LT/RT levels each for the DirectInput compatibility path
+- both motors, different asymmetric intensities, and endpoints
+- zero signal and sustained original state over 1,500 ms
+- SDL output errors are reported as errors
+- five disconnect/reconnect cycles with neutral input, stable slot,
+  the second controller remaining usable, and correctly routed rumble.
+Original rumble routines were not changed for version 1.4.
+No additional or artificial vibration effects are generated in the game.
+
+Limitations
+No physical controller was detected. All new controller input
+and rumble tests used virtual SDL gamepads. Xbox One, 8BitDo,
+USB/Bluetooth, and physical motors have therefore not been fully tested.
+No Xbox 360 console/binary was available for comparison. The original
+PC physics is retained with separate triggers; bit-for-bit equivalence with
+console drift behavior is not claimed.
+Other executable editions are rejected by instruction checks; the combined
+trigger path may remain in use on those editions. Other editions require
+separate analysis. Identical controllers without serial numbers cannot be
+reliably distinguished after a simultaneous disconnect.
+
+Cleanup
+Both save files and config_ss.cfg were restored from pre-test backups
+and their SHA-256 hashes compared. The original executable is unchanged.
+Test DLLs/EXEs are neither installed nor distributed. Production DLLs contain
+no virtual test controllers, input command file, or live test logging.
+
+Build / reproduction (Visual Studio 2022 x86 Native Tools)
+Place the official SDL3-devel-3.4.20-VC package alongside this repository;
+adjust paths if needed.
+Production:
+cl /LD /std:c++17 /EHsc /O2 /MT /D_CRT_SECURE_NO_WARNINGS /I SDL3-3.4.20\include sspad.cpp prompts.cpp triggers.cpp /link /DEF:sspad.def /OUT:sspad.dll SDL3-3.4.20\lib\x86\SDL3.lib user32.lib
+Integration test:
+cl /LD /std:c++17 /EHsc /O2 /MT /D_CRT_SECURE_NO_WARNINGS /I SDL3-3.4.20\include tests\independent-triggers-test.cpp triggers.cpp /link /OUT:independent-test.dll SDL3-3.4.20\lib\x86\SDL3.lib user32.lib
+cl /EHsc /MT tests\trigger-test-launcher.cpp /link /OUT:independent-test.exe /BASE:0x400000 /DYNAMICBASE:NO /OPT:NOREF
+Place SDL3.dll beside the test EXE/DLL, then run:
+independent-test.exe "Pfad\zur\originalen\SplitSecond.exe"

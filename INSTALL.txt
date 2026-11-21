@@ -1,0 +1,108 @@
+Split/Second SDL Controller Fix 1.4
+SDL 3.4.20 with automatic Xbox/keyboard prompts
+
+Close the game. Extract the entire contents of this ZIP into the game folder
+beside SplitSecond.exe. Replace files from an earlier version of this controller
+fix when prompted, then launch SplitSecond.exe.
+
+dinput8.dll is the automatic loading path for the original executable.
+sspad.dll also supports an executable previously patched with versions 1.0/1.1
+of this fix. SDL3.dll is the controller runtime library. At startup, the fix
+redirects input interfaces only in the running process.
+
+Prompts and controls menu
+When a controller is connected, the command bar starts with colored Xbox
+symbols. A keyboard key press switches to keyboard prompts; the next controller
+input switches back to Xbox prompts. Without a connected controller, keyboard
+prompts are used. Minor stick drift within the detection threshold does not
+cause a switch. Switching also works on an otherwise idle menu screen.
+The controls menu shows A/B/X/Y, LB/RB, LT/RT, and stick directions instead of
+generic button or axis names, in both German and English. Labels follow the
+selected binding, including after controls are remapped.
+
+Controllers
+SDL detects standard controller layouts automatically. For 8BitDo controllers,
+use Windows/XInput mode when the model supports it. Disconnected controllers
+report neutral input and can reconnect during the same session. Player slots
+are retained. Controllers without serial numbers are matched by SDL model
+when reconnecting. If multiple identical controllers without serial numbers
+disconnect at the same time, their physical identities cannot be reliably
+distinguished. Split/Second supports two local split-screen players.
+
+Analog triggers and vibration
+LT and RT reach the original PC game's axis and action queries as independent
+analog values from 0 to 100 percent. They are not combined when pressed
+simultaneously. Both values are stored for the current and previous input
+buffers of each SDL controller. The existing binding convention, positive Z
+for LT and negative Z for RT, is retained. The DirectInput compatibility Z
+axis remains combined; the verified game path uses the independent samples
+instead. Original action bindings and vehicle/drift physics are retained.
+
+The original rumble values for both motors and each player are passed to SDL
+unchanged. An unchanged value remains active until the game sends another
+request; an earlier 250 ms limit was corrected. No effects are invented or
+amplified. A zero signal, focus loss, Unacquire, or disconnect stops rumble.
+If processing stalls, the SDL request expires within one second. SDL output
+errors are returned as errors. Tests used virtual SDL controllers; physical
+controller motors were not tested.
+
+Compatibility
+SHA-256 of the tested original executable:
+D11FC7F48DD504BDEFB16B548980BD41101F6C1A23D29C03487A81D4DE42173E
+
+Prompt hooks check their expected addresses at runtime and remain inactive if
+the executable layout differs. Other editions have not been broadly tested.
+The independent trigger path is specific to the executable layout above;
+other editions may continue using the combined trigger axis. Compatibility
+with another mod's dinput8.dll must be assessed separately. Back it up before
+replacing it.
+
+Removing the fix
+For the original executable, remove this package's dinput8.dll, sspad.dll, and
+SDL3.dll. If using an executable patched by version 1.0/1.1, restore its
+original backup first. Restore any earlier same-named DLLs from your own backup.
+
+Source and licenses
+This repository contains the source code and licenses. The controller adapter
+is based on Back on Air (MIT), commit 57d17d88dc02e56ebcc6686efc6c20226d9cc5f1:
+https://github.com/xenophobentx/back-on-air
+SDL 3.4.20 (zlib):
+https://github.com/libsdl-org/SDL/releases/tag/release-3.4.20
+
+Building
+Use Visual Studio 2022 x86 Native Tools and SDL3-devel-3.4.20-VC:
+cl /LD /std:c++17 /EHsc /O2 /MT /D_CRT_SECURE_NO_WARNINGS /I SDL3-3.4.20\include sspad.cpp prompts.cpp triggers.cpp /link /DEF:sspad.def /OUT:sspad.dll SDL3-3.4.20\lib\x86\SDL3.lib user32.lib
+Copy sspad.dll to dinput8.dll as well.
+
+Validation details and limitations are in tests\TEST-REPORT.txt.
+
+Test summary
+Version 1.4 tested 10,201 simultaneous trigger combinations per controller
+through the original PC game routines. Split-screen, simultaneous trigger
+levels, and in-game reconnect were also checked. No direct comparison with the
+Xbox 360 version was performed. See tests\TEST-REPORT.txt.
+
+The live test used a separate instrumented test copy and two virtual SDL
+controllers. Both cars were driven in the City Center split-screen race.
+Original axis queries simultaneously returned:
+Controller 1: LT 0.24997711 / RT 0.74999237
+Controller 2: LT 0.74999237 / RT 0.24997711
+Both: LT 0.49998474 / RT 0.49998474, and LT 1.0 / RT 1.0.
+Small partial-value differences come from quantized SDL test values; full
+triggers returned exactly 1.0. There was no subtraction between triggers.
+Current and previous game buffers were logged. One virtual controller was
+disconnected and reconnected during the race without a crash.
+A quantitative drift/vehicle-physics experiment was not performed.
+
+Limitations
+No physical controller was detected during these tests. Xbox One/8BitDo
+hardware, USB/Bluetooth, and real rumble motors are therefore not fully
+verified. No Xbox 360 console or binary was available for comparison; the
+original PC physics is retained, but bit-for-bit agreement with the console
+version's drift behavior is not claimed.
+
+Validation and cleanup
+The original executable was unchanged. Save files and config_ss.cfg were
+restored from backup and their SHA-256 hashes were compared. Test DLLs and EXEs
+are not installed or distributed. Production DLLs contain no virtual test
+controllers, input command file, or live test logging.
