@@ -1,0 +1,5 @@
+No physical controller currently connected.
+Adapter enumeration and independent SDL device state verified.
+Both pads: 101 monotonic RT levels and 101 LT levels passed, signed Z range and neutral exact.
+Both motors: independent intensities, endpoints, stop, 1500 ms held original state, SDL failure propagation passed.
+Five SDL detach/reattach cycles: neutral input, independent second pad, same restored slot, correct rumble.

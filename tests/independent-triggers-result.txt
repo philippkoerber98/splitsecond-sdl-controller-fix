@@ -1,0 +1,10 @@
+START
+hook installed
+SDL ready
+PASS: 10201 simultaneous pairs per controller through original axis AND original action lookup
+PASS: previous/current frame snapshots remain separate
+PASS: trigger rebinding and LB digital binding through original action lookup
+PASS: independent original motor channel transport unaffected
+PASS: disconnect neutralises both cached frames; reconnect restores independent triggers
+PASS: acquisition gate and Unacquire neutralise triggers
+ALL INTEGRATION TESTS PASSED

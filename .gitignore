@@ -1,0 +1,15 @@
+# Local builds and dependencies
+*.obj
+*.lib
+*.exp
+*.pdb
+*.ilk
+*.dll
+*.exe
+SDL3-*/
+build/
+.vs/
+
+# Personal game configuration
+*.sav
+*.cfg
