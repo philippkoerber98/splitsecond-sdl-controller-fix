@@ -51,3 +51,7 @@ Copy both DLLs and `SDL3-3.4.20\lib\x86\SDL3.dll` into the game folder. Test bui
 The controller adapter is based on [Back on Air](https://github.com/xenophobentx/back-on-air), commit `57d17d88dc02e56ebcc6686efc6c20226d9cc5f1`, under the [MIT License](LICENSE.txt). Original copyright notices are preserved. This version adds device prompts, Xbox control labels, rumble forwarding, and independent analog triggers in the game input path.
 
 SDL 3.4.20 is distributed under the [zlib License](SDL-LICENSE.txt). Split/Second and related trademarks belong to their respective owners. This is an unofficial modification.
+
+## AI assistance
+
+ChatGPT AI, through Codex, assisted with the analysis, implementation, testing, and documentation of this fix. The project maintainer reviewed and tested the resulting changes.

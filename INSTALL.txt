@@ -106,3 +106,8 @@ The original executable was unchanged. Save files and config_ss.cfg were
 restored from backup and their SHA-256 hashes were compared. Test DLLs and EXEs
 are not installed or distributed. Production DLLs contain no virtual test
 controllers, input command file, or live test logging.
+
+AI assistance
+ChatGPT AI, through Codex, assisted with the analysis, implementation, testing,
+and documentation of this fix. The project maintainer reviewed and tested the
+resulting changes.
