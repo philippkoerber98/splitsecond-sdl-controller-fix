@@ -4,7 +4,7 @@ Version 1.4 for the Windows PC release of Split/Second. SDL handles controller i
 
 ## Installation
 
-[Download the ready-to-use v1.4 ZIP](dist/SplitSecond-Controller-Fix-v1.4.zip). Close the game and extract the ZIP contents into the folder containing `SplitSecond.exe`. All three DLLs must be in that folder. Then launch the game normally. Back up any existing `dinput8.dll` from another mod before replacing it; compatibility with other mods must be assessed separately.
+[Download the ready-to-use v1.4 ZIP](dist/SplitSecond-Controller-Fix-v1.4.zip). Before installing, close the game and make a backup of the original files in the game folder. Then extract the ZIP contents into the folder containing `SplitSecond.exe`. All three DLLs must be in that folder. Then launch the game normally. Back up any existing `dinput8.dll` from another mod before replacing it; compatibility with other mods must be assessed separately.
 
 The game executable is not modified and is not included in this repository. To remove the fix from an unmodified executable, delete the three supplied DLLs. See [INSTALL.txt](INSTALL.txt) for detailed instructions.
 
